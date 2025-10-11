@@ -25,12 +25,17 @@ interface TutorialSystemProps {
   onStepChange: (step: number) => void
   onComplete: () => void
   isVisible: boolean
-  partitions?: number[]
+  // ✅ ADAPTADO: Parámetros específicos del primer teorema fundamental
   leftLimit?: number[]
   rightLimit?: number[]
   currentFunction?: string
-  approximationType?: string
   isAnimating?: boolean
+  currentX?: number
+  fValue?: number
+  integralValue?: number
+  // Parámetros de Riemann (opcionales para compatibilidad)
+  partitions?: number[]
+  approximationType?: string
 }
 
 export function TutorialSystem({
@@ -39,20 +44,30 @@ export function TutorialSystem({
   onStepChange,
   onComplete,
   isVisible,
-  partitions,
+  // ✅ ADAPTADO: Parámetros específicos del primer teorema fundamental
   leftLimit,
   rightLimit,
   currentFunction,
-  approximationType,
   isAnimating,
+  currentX,
+  fValue,
+  integralValue,
+  // Parámetros de Riemann (opcionales)
+  partitions,
+  approximationType,
 }: TutorialSystemProps) {
-  console.log("🚀 TutorialSystem COMPONENTE INICIADO:", { isVisible, currentStep, steps })
   
   const [showHint, setShowHint] = useState(false)
   const [animationClass, setAnimationClass] = useState("")
   const [hasInteracted, setHasInteracted] = useState(false)
 
   const currentStepData = steps[currentStep - 1]
+  
+  // 🔍 LOG DE RENDERIZADO REMOVIDO
+  const renderKey = `${currentStep}-${isVisible}`
+  if (renderKey !== (window as any).lastRenderKey) {
+    (window as any).lastRenderKey = renderKey
+  }
   const progress = (currentStep / steps.length) * 100
 
   useEffect(() => {
@@ -69,35 +84,49 @@ export function TutorialSystem({
     setShowHint(false)
   }, [currentStep])
 
-  // ✅ RESTAURADO: Detección simple como en la versión funcional
+  // ✅ ADAPTADO: Detección de interacciones para el primer teorema fundamental
   useEffect(() => {
     if (!isVisible || !currentStepData || currentStepData.isObservationOnly) return
 
     const checkInteraction = () => {
-      // Paso 4: Detectar cambio en slider de particiones (básico y avanzado)
-      if (currentStep === 4 && partitions && partitions[0] !== 8) {
+      // Paso 3: Detectar cambio en límites (primer teorema fundamental)
+      if (currentStep === 3 && leftLimit && rightLimit && (leftLimit[0] !== -1.6 || rightLimit[0] !== 4.0)) {
         setHasInteracted(true)
       }
-      // Paso 5: Detectar cambio en límites (básico)
+      // Paso 4: Detectar cambio en posición x (primer teorema fundamental)
+      else if (currentStep === 4 && currentX && leftLimit && Math.abs(currentX - leftLimit[0]) > 0.1) {
+        setHasInteracted(true)
+      }
+      // Paso 5: Detectar animación (primer teorema fundamental)
+      else if (currentStep === 5 && isAnimating) {
+        setHasInteracted(true)
+      }
+      // Compatibilidad con Riemann (si se proporcionan los parámetros)
+      else if (currentStep === 4 && partitions && partitions[0] !== 8) {
+        setHasInteracted(true)
+      }
       else if (currentStep === 5 && leftLimit && rightLimit && (leftLimit[0] !== -2 || rightLimit[0] !== 4)) {
         setHasInteracted(true)
       }
     }
 
     checkInteraction()
-  }, [partitions, leftLimit, rightLimit, currentStep, isVisible, currentStepData])
+  }, [currentX, leftLimit, rightLimit, isAnimating, partitions, currentStep, isVisible, currentStepData])
+
 
 
   // ===== USEEFFECT DE BLOQUEO COMPLETO (SOLUCIÓN EXACTA) =====
   useEffect(() => {
-    console.log("🔧 APLICANDO SISTEMA DE BLOQUEO...")
-    console.log("🔍 Estado:", { isVisible, currentStep, currentStepData })
-    console.log("🎯 Target del paso:", currentStepData?.target)
-    
     if (!isVisible || !currentStepData) {
-      console.log("❌ No se puede aplicar bloqueo")
       return
     }
+
+    // Solo ejecutar una vez por paso para evitar bucle infinito
+    const stepKey = `${currentStep}-${isVisible}`
+    if ((window as any).lastTutorialStep === stepKey) return
+    ;(window as any).lastTutorialStep = stepKey
+    
+    // Log removido
 
     // Delay para asegurar renderizado
     const timeoutId = setTimeout(() => {
@@ -113,6 +142,7 @@ export function TutorialSystem({
       // 2. IDENTIFICAR ELEMENTO OBJETIVO
       let targetElement: Element | null = null
       switch (currentStepData.target) {
+        // ✅ Targets de Riemann
         case "#partitions-slider":
           targetElement = document.querySelector("#partitions-slider")
           break
@@ -130,15 +160,28 @@ export function TutorialSystem({
         case "rectangles":
           targetElement = document.querySelector("canvas")
           break
+        // ✅ Targets del Primer Teorema Fundamental
+        case "bridge-canvas":
+          targetElement = document.querySelector("#bridge-canvas")
+          break
+        case "limits-controls":
+          targetElement = document.querySelector("#limits-controls")
+          break
+        case "position-control":
+          targetElement = document.querySelector("#position-control")
+          break
+        case "animation-controls":
+          targetElement = document.querySelector("#animation-controls")
+          break
+        case "function-selector":
+          targetElement = document.querySelector("#function-selector")
+          break
         default:
           if (currentStepData.target !== "fairy" && currentStepData.target !== "completion") {
             targetElement = document.querySelector(currentStepData.target)
           }
       }
 
-      console.log("🎯 Elemento objetivo:", targetElement)
-      console.log("🎯 Target del paso:", currentStepData.target)
-      console.log("🎯 Es paso de observación:", currentStepData.isObservationOnly)
 
       // 3. APLICAR HIGHLIGHT AL OBJETIVO
       if (targetElement) {
@@ -147,16 +190,11 @@ export function TutorialSystem({
       }
 
       // 4. BLOQUEAR TODOS LOS ELEMENTOS (SIEMPRE, excepto en pasos especiales)
-      console.log("🔒 Aplicando bloqueo para paso:", currentStep, "target:", currentStepData.target, "isObservationOnly:", currentStepData.isObservationOnly)
-      
       // BLOQUEAR SIEMPRE, excepto en pasos de finalización
       if (currentStepData.target !== "completion") {
         const interactiveElements = document.querySelectorAll(
-          'button, input, [role="slider"], .draggable-point, .slider-handle, .range-input, .interactive-element, [data-interactive], .function-button, .function-selector, .limit-slider, .partitions-slider, [data-radix-collection-item], [data-radix-slider-thumb], [data-radix-slider-track], select, option, [data-radix-slider-root], [data-radix-slider-range]'
+          'button, input, [role="slider"], .draggable-point, .slider-handle, .range-input, .interactive-element, [data-interactive], .function-button, .function-selector, .limit-slider, .partitions-slider, [data-radix-collection-item], [data-radix-slider-thumb], [data-radix-slider-track], select, option, [data-radix-slider-root], [data-radix-slider-range], .slider, .slider-track, .slider-thumb, .slider-range'
         )
-        
-        console.log(`🔍 Elementos interactivos encontrados: ${interactiveElements.length}`)
-        console.log("🎯 Target element encontrado:", targetElement)
         
         interactiveElements.forEach((el) => {
           const isTargetElement = el === targetElement || el.closest(currentStepData.target)
@@ -165,15 +203,14 @@ export function TutorialSystem({
           const isModeButton = el.textContent?.includes('Básico') || el.textContent?.includes('Avanzado') || 
                               el.textContent?.includes('Guiado') || el.textContent?.includes('Libre')
           
-          console.log(`🔍 Analizando elemento:`, {
-            tagName: el.tagName,
-            id: el.id,
-            className: el.className,
-            isTargetElement,
-            isHintButton,
-            isTutorialCard,
-            target: currentStepData.target
-          })
+          // ✅ DETECCIÓN ESPECÍFICA PARA SLIDERS DE RADIX UI
+          const isSlider = el.closest('[data-radix-slider-root]') || 
+                          el.closest('[data-radix-slider-thumb]') || 
+                          el.closest('[data-radix-slider-track]') ||
+                          el.closest('[data-radix-slider-range]') ||
+                          el.closest('.slider') ||
+                          el.closest('[role="slider"]')
+          
           
           // LÓGICA DE BLOQUEO BASADA EN TIPO DE PASO
           let shouldBlock = false
@@ -181,22 +218,36 @@ export function TutorialSystem({
           if (currentStepData.isObservationOnly) {
             // PASOS DE OBSERVACIÓN: Bloquear TODO excepto navegación del tutorial y botones de modo
             shouldBlock = !isHintButton && !isTutorialCard && !isModeButton
-            console.log(`🔍 PASO DE OBSERVACIÓN - Bloqueando todo excepto navegación y modo`)
           } else {
             // PASOS DE INTERACCIÓN: Bloquear TODO excepto elemento objetivo, navegación y botones de modo
             shouldBlock = !isTargetElement && !isHintButton && !isTutorialCard && !isModeButton
-            console.log(`🔍 PASO DE INTERACCIÓN - Bloqueando todo excepto objetivo y navegación`)
           }
           
-          console.log(`🔍 Paso ${currentStep} - shouldBlock: ${shouldBlock}`, {
-            currentStep,
-            isObservationOnly: currentStepData.isObservationOnly,
-            isHintButton,
-            isTutorialCard,
-            isModeButton,
-            isTargetElement,
-            target: currentStepData.target
+        // ✅ BLOQUEO ESPECÍFICO PARA SLIDERS EN PASOS DE OBSERVACIÓN
+        if (currentStepData.isObservationOnly) {
+          // Bloqueando sliders en paso de observación
+          // En pasos de observación, bloquear TODOS los sliders sin excepción
+          const allSliders = document.querySelectorAll('[data-radix-slider-root], [data-radix-slider-thumb], [data-radix-slider-track], [data-radix-slider-range], [role="slider"]')
+          // Sliders encontrados para bloquear
+          
+          allSliders.forEach((slider, index) => {
+            const htmlSlider = slider as HTMLElement
+            htmlSlider.style.pointerEvents = 'none'
+            htmlSlider.style.opacity = '0.5'
+            htmlSlider.style.cursor = 'not-allowed'
+            htmlSlider.classList.add('tutorial-blocked')
+            // Bloqueando slider
           })
+          
+          // Verificar sliders específicos del primer teorema
+          const limitsSliders = document.querySelectorAll('#limits-controls [data-radix-slider-root], #limits-controls [data-radix-slider-thumb], #limits-controls [data-radix-slider-track], #limits-controls [data-radix-slider-range]')
+          const positionSliders = document.querySelectorAll('#position-control [data-radix-slider-root], #position-control [data-radix-slider-thumb], #position-control [data-radix-slider-track], #position-control [data-radix-slider-range]')
+          const animationSliders = document.querySelectorAll('#animation-controls [data-radix-slider-root], #animation-controls [data-radix-slider-thumb], #animation-controls [data-radix-slider-track], #animation-controls [data-radix-slider-range]')
+          
+          // Sliders específicos encontrados
+        }
+          
+          
           
           if (shouldBlock) {
             // APLICAR BLOQUEO COMPLETO
@@ -206,9 +257,6 @@ export function TutorialSystem({
             ;(el as HTMLElement).style.filter = "grayscale(100%)"
             ;(el as HTMLElement).style.cursor = "not-allowed"
             
-            console.log(`🚫 BLOQUEANDO elemento: ${el.tagName} - ID: ${el.id} - Clase: ${el.className}`)
-          } else {
-            console.log(`✅ PERMITIENDO elemento: ${el.tagName} - ID: ${el.id} - Clase: ${el.className}`)
           }
         })
         
@@ -231,7 +279,6 @@ export function TutorialSystem({
                 ;(el as HTMLElement).style.opacity = "0.3"
                 ;(el as HTMLElement).style.filter = "grayscale(100%)"
                 ;(el as HTMLElement).style.cursor = "not-allowed"
-                console.log(`🚫 BLOQUEANDO SLIDER ESPECÍFICO:`, selector, el)
               }
             })
           })
@@ -248,7 +295,6 @@ export function TutorialSystem({
                 ;(slider as HTMLElement).style.opacity = "0.3"
                 ;(slider as HTMLElement).style.filter = "grayscale(100%)"
                 ;(slider as HTMLElement).style.cursor = "not-allowed"
-                console.log(`🚫 BLOQUEANDO SLIDER DE LÍMITES:`, slider)
               })
             }
           } else if (currentStepData.target === "#limits") {
@@ -260,7 +306,6 @@ export function TutorialSystem({
               ;(partitionsSlider as HTMLElement).style.opacity = "0.3"
               ;(partitionsSlider as HTMLElement).style.filter = "grayscale(100%)"
               ;(partitionsSlider as HTMLElement).style.cursor = "not-allowed"
-              console.log(`🚫 BLOQUEANDO SLIDER DE PARTICIONES:`, partitionsSlider)
             }
           }
           
@@ -274,7 +319,6 @@ export function TutorialSystem({
               ;(gardenControls as HTMLElement).style.opacity = "0.3"
               ;(gardenControls as HTMLElement).style.filter = "grayscale(100%)"
               ;(gardenControls as HTMLElement).style.cursor = "not-allowed"
-              console.log(`🚫 BLOQUEANDO CONTROLES DEL JARDÍN:`, gardenControls)
               
               // Bloquear todos los sliders dentro del contenedor
               const allSlidersInLimits = gardenControls.querySelectorAll('input[type="range"], [data-radix-slider-root], [data-radix-slider-track], [data-radix-slider-thumb]')
@@ -284,7 +328,6 @@ export function TutorialSystem({
                 ;(slider as HTMLElement).style.opacity = "0.3"
                 ;(slider as HTMLElement).style.filter = "grayscale(100%)"
                 ;(slider as HTMLElement).style.cursor = "not-allowed"
-                console.log(`🚫 BLOQUEANDO SLIDER DENTRO DE LÍMITES:`, slider)
               })
             }
             
@@ -296,7 +339,6 @@ export function TutorialSystem({
               ;(speedSlider as HTMLElement).style.opacity = "0.3"
               ;(speedSlider as HTMLElement).style.filter = "grayscale(100%)"
               ;(speedSlider as HTMLElement).style.cursor = "not-allowed"
-              console.log(`🚫 BLOQUEANDO SLIDER DE VELOCIDAD:`, speedSlider)
             }
           }
         }
@@ -304,29 +346,41 @@ export function TutorialSystem({
         // VERIFICAR QUE LOS ESTILOS SE APLICARON
         setTimeout(() => {
           const blockedElements = document.querySelectorAll('.tutorial-blocked')
-          console.log(`🎯 VERIFICACIÓN: ${blockedElements.length} elementos bloqueados`)
+          // Verificación de elementos bloqueados
           blockedElements.forEach((el, index) => {
             const htmlEl = el as HTMLElement
-            console.log(`🎯 Elemento ${index + 1}:`, {
-              tagName: el.tagName,
-              id: el.id,
-              className: el.className,
-              pointerEvents: htmlEl.style.pointerEvents,
-              opacity: htmlEl.style.opacity,
-              filter: htmlEl.style.filter
-            })
+            // Elemento bloqueado
           })
         }, 200)
+        
+        // 🔍 VERIFICACIÓN ESPECÍFICA DE SLIDERS DEL PRIMER TEOREMA
+        setTimeout(() => {
+          // Verificación específica de sliders del primer teorema
+          
+          const limitsContainer = document.querySelector('#limits-controls')
+          const positionContainer = document.querySelector('#position-control')
+          const animationContainer = document.querySelector('#animation-controls')
+          
+          // Estado de contenedores
+          
+          if (limitsContainer) {
+            const limitsSliders = limitsContainer.querySelectorAll('[data-radix-slider-root], [data-radix-slider-thumb], [data-radix-slider-track], [data-radix-slider-range]')
+            // Sliders en límites
+            limitsSliders.forEach((slider, index) => {
+              const htmlSlider = slider as HTMLElement
+              // Slider en límites
+            })
+          }
+        }, 300)
       }
     }, 100)
 
     return () => clearTimeout(timeoutId)
-  }, [currentStep, isVisible, currentStepData])
+  }, [currentStep, isVisible])
 
   // Cleanup effect
   useEffect(() => {
     return () => {
-      console.log("🧹 Limpiando sistema de bloqueo...")
       document.querySelectorAll(".tutorial-highlight").forEach((el) => {
         el.classList.remove("tutorial-highlight", "tutorial-spotlight")
       })

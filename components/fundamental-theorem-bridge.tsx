@@ -39,7 +39,7 @@ const funciones = {
 
 export function FundamentalTheoremBridge() {
   const [currentView, setCurrentView] = useState<"theory" | "visualizations" | "examples">("theory")
-  const [mode, setMode] = useState<"guided" | "free">("guided")
+  const [mode, setMode] = useState<"guided" | "free">("free")
   const [complexityLevel, setComplexityLevel] = useState<"basic" | "advanced">("basic")
   
   // Estados del tutorial
@@ -63,17 +63,25 @@ export function FundamentalTheoremBridge() {
   const bridgeCanvasRef = useRef<HTMLCanvasElement>(null)
   const graphCanvasRef = useRef<HTMLCanvasElement>(null)
   
-  // Funciones del tutorial
-  const startTutorial = useCallback(() => {
-    setMode("guided")
+  // ✅ ELIMINADO: startTutorial ya no es necesario - el modo guiado inicia automáticamente
+  
+  // ✅ NUEVO: Función para cambiar a modo guiado (como en Riemann)
+  const handleModeChange = useCallback((newMode: "guided" | "free") => {
+    setMode(newMode)
+    if (newMode === "guided") {
+      // Al cambiar a modo guiado, iniciar tutorial automáticamente
     setTutorialActive(true)
     setTutorialStep(1)
-    // Reset a valores por defecto para el tutorial
     setSelectedFunction("cuadratica")
     setLeftLimit(-1.6)
     setRightLimit(4.0)
     setCurrentX(-1.6)
     setIsPlaying(false)
+    } else {
+      // Al cambiar a modo libre, detener tutorial
+      setTutorialActive(false)
+      setTutorialStep(0)
+    }
   }, [])
 
   const completeTutorial = useCallback(() => {
@@ -590,14 +598,14 @@ export function FundamentalTheoremBridge() {
 
     const animate = (currentTime: number) => {
       if (currentTime - lastUpdateTime >= frameDelay) {
-        setCurrentX(prev => {
-          const next = prev + animationSpeed
-          if (next >= rightLimit) {
-            setIsPlaying(false)
-            return leftLimit
-          }
-          return next
-        })
+      setCurrentX(prev => {
+        const next = prev + animationSpeed
+        if (next >= rightLimit) {
+          setIsPlaying(false)
+          return leftLimit
+        }
+        return next
+      })
         lastUpdateTime = currentTime
       }
       animationId = requestAnimationFrame(animate)
@@ -634,7 +642,7 @@ export function FundamentalTheoremBridge() {
         cancelAnimationFrame(animationId)
       }
     }
-  }, [drawBridge, drawGraph])
+  }, [selectedFunction, leftLimit, rightLimit, currentX, isPlaying, animationSpeed])
 
   // Componente de visualizaciones
   const VisualizationsContent = () => (
@@ -644,7 +652,7 @@ export function FundamentalTheoremBridge() {
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex gap-2">
           <Button
-            onClick={() => setMode("guided")}
+            onClick={() => handleModeChange("guided")}
             variant={mode === "guided" ? "default" : "outline"}
             className="flex items-center gap-2"
           >
@@ -652,7 +660,7 @@ export function FundamentalTheoremBridge() {
             Modo Guiado
           </Button>
           <Button
-            onClick={() => setMode("free")}
+            onClick={() => handleModeChange("free")}
             variant={mode === "free" ? "default" : "outline"}
             className="flex items-center gap-2"
           >
@@ -680,21 +688,14 @@ export function FundamentalTheoremBridge() {
           </div>
         )}
 
-          <Button 
-            onClick={startTutorial} 
-            variant="secondary"
-            className="flex items-center gap-2"
-          >
-            <BookOpen className="w-4 h-4" />
-            Iniciar Tutorial
-          </Button>
+        {/* ✅ ELIMINADO: No necesitamos botón "Iniciar Tutorial" - el modo guiado ya inicia automáticamente */}
         </div>
 
         {/* Controles */}
         <Card className="p-6 bg-white/95 backdrop-blur border border-purple-200">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Selector de función */}
-            <div>
+            <div id="function-selector">
               <label className="block text-sm font-medium text-purple-800 mb-2">
                 🌟 Función Mágica
               </label>
@@ -718,7 +719,7 @@ export function FundamentalTheoremBridge() {
             </div>
 
             {/* Límite inferior */}
-            <div>
+            <div id="limits-controls">
               <label className="block text-sm font-medium text-purple-800 mb-2">
                 Límite a: {leftLimit.toFixed(1)}
               </label>
@@ -760,7 +761,7 @@ export function FundamentalTheoremBridge() {
                 </div>
 
             {/* Posición actual x */}
-            <div>
+            <div id="position-control">
               <label className="block text-sm font-medium text-purple-800 mb-2">
                 Posición x: {currentX.toFixed(2)}
               </label>
@@ -779,7 +780,7 @@ export function FundamentalTheoremBridge() {
               </div>
 
             {/* Controles de animación */}
-            <div>
+            <div id="animation-controls">
               <label className="block text-sm font-medium text-purple-800 mb-2">
                 🎬 Animación
               </label>
@@ -823,6 +824,7 @@ export function FundamentalTheoremBridge() {
 
           <div className="bg-gradient-to-b from-sky-200 to-blue-300 rounded-lg p-4">
             <canvas
+              id="bridge-canvas"
               ref={bridgeCanvasRef}
               width={800}
               height={400}
@@ -869,13 +871,13 @@ export function FundamentalTheoremBridge() {
                 x = {currentX.toFixed(2)}
               </div>
               <div className="text-sm text-purple-600">Posición actual</div>
-            </div>
+                </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-800">
                 f(x) = {fValue.toFixed(2)}
-              </div>
+                </div>
               <div className="text-sm text-blue-600">Función original</div>
-            </div>
+                </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-800">
                 F(x) = {integralValue.toFixed(2)}
@@ -903,15 +905,15 @@ export function FundamentalTheoremBridge() {
                 F'({currentX.toFixed(2)}) = {derivativeValue.toFixed(4)} ≈ f({currentX.toFixed(2)}) = {fValue.toFixed(4)}
               </div>
             </div>
-          </div>
-        </Card>
+              </div>
+            </Card>
 
         {/* ✅ MEJORADO: Explicación del teorema con información completa */}
         <Card className="p-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200">
           <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-600" />
             El Primer Teorema Fundamental del Cálculo
-          </h4>
+                </h4>
           
           {/* Fórmula principal */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200 mb-4">
@@ -1181,7 +1183,8 @@ export function FundamentalTheoremBridge() {
           </div>
         </Card>
 
-        {/* Sistema de Tutoriales */}
+        {/* ✅ CORREGIDO: Sistema de Tutoriales adaptado para el primer teorema fundamental */}
+        {tutorialActive && (
         <TutorialSystem
           steps={getTutorialSteps('bridge', complexityLevel)}
           currentStep={tutorialStep}
@@ -1192,7 +1195,12 @@ export function FundamentalTheoremBridge() {
           rightLimit={[rightLimit]}
           currentFunction={selectedFunction}
           isAnimating={isPlaying}
+            // ✅ ADAPTADO: Parámetros específicos del primer teorema fundamental
+            currentX={currentX}
+            fValue={fValue}
+            integralValue={integralValue}
         />
+        )}
 
         {/* Exit Button */}
         <div className="fixed bottom-6 left-6">
