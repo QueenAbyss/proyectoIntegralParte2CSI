@@ -16,7 +16,16 @@ interface Example {
   insight: string
 }
 
-export function ExamplesSection() {
+interface ExamplesSectionProps {
+  onLoadExample?: (data: {
+    functionType: "quadratic" | "cubic" | "sin" | "custom"
+    customFunction: string
+    a: number
+    b: number
+  }) => void
+}
+
+export function ExamplesSection({ onLoadExample }: ExamplesSectionProps) {
   const examples: Example[] = [
     {
       id: "quadratic",
@@ -57,11 +66,23 @@ export function ExamplesSection() {
   ]
 
   const handleLoadExample = (example: Example) => {
-    // Esta función se conectaría con el sistema de visualizaciones
-    // Por ahora solo mostramos un mensaje
     console.log("Cargando ejemplo:", example.title)
-    // En una implementación completa, esto cambiaría los parámetros
-    // de la sección de visualizaciones automáticamente
+    
+    // Determinar el tipo de función
+    let functionType: "quadratic" | "cubic" | "sin" | "custom" = "custom"
+    if (example.equation === "x**2") functionType = "quadratic"
+    else if (example.equation === "x**3") functionType = "cubic"
+    else if (example.equation === "Math.sin(x)") functionType = "sin"
+    
+    // Llamar al callback con los datos del ejemplo
+    if (onLoadExample) {
+      onLoadExample({
+        functionType,
+        customFunction: example.equation,
+        a: example.interval[0],
+        b: example.interval[1]
+      })
+    }
   }
 
   return (

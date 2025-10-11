@@ -16,6 +16,14 @@ export function MeanValueTower() {
     elapsedTime: 0,
     isRunning: false,
   })
+  
+  // Estado compartido para ejemplos
+  const [exampleData, setExampleData] = useState<{
+    functionType: "quadratic" | "cubic" | "sin" | "custom"
+    customFunction: string
+    a: number
+    b: number
+  } | null>(null)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20">
@@ -106,9 +114,18 @@ export function MeanValueTower() {
                   <VisualizationSection 
                     timerState={mvtTimerState}
                     setTimerState={setMvtTimerState}
+                    exampleData={exampleData}
+                    onExampleLoaded={setExampleData}
                   />
                 )}
-                {subTab === "ejemplos" && <ExamplesSection />}
+                {subTab === "ejemplos" && (
+                  <ExamplesSection 
+                    onLoadExample={(data) => {
+                      setExampleData(data)
+                      setSubTab("visualizaciones") // Cambiar automáticamente a visualizaciones
+                    }}
+                  />
+                )}
               </div>
             </TabsContent>
 

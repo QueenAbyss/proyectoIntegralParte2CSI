@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -23,9 +23,16 @@ interface TimerState {
 interface VisualizationSectionProps {
   timerState?: TimerState
   setTimerState?: (state: TimerState) => void
+  exampleData?: {
+    functionType: "quadratic" | "cubic" | "sin" | "custom"
+    customFunction: string
+    a: number
+    b: number
+  } | null
+  onExampleLoaded?: (data: any) => void
 }
 
-export function VisualizationSection({ timerState, setTimerState }: VisualizationSectionProps) {
+export function VisualizationSection({ timerState, setTimerState, exampleData, onExampleLoaded }: VisualizationSectionProps) {
   // Estados principales
   const [a, setA] = useState(-2.0)
   const [b, setB] = useState(2.0)
@@ -54,6 +61,19 @@ export function VisualizationSection({ timerState, setTimerState }: Visualizatio
   const [excellentCount, setExcellentCount] = useState(0)
   const [showNotification, setShowNotification] = useState(false)
   const [currentNotification, setCurrentNotification] = useState<any>(null)
+
+  // Aplicar datos del ejemplo cuando se carguen
+  useEffect(() => {
+    if (exampleData) {
+      setA(exampleData.a)
+      setB(exampleData.b)
+      setFunctionType(exampleData.functionType)
+      setCustomFunction(exampleData.customFunction)
+      setUserEstimateC(null) // Limpiar estimación anterior
+      setResult(null) // Limpiar resultado anterior
+      setIsLocked(false) // Desbloquear para nueva estimación
+    }
+  }, [exampleData])
 
   // Función matemática actual
   const f = useCallback((x: number): number => {
