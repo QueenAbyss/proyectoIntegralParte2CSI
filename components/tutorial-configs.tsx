@@ -58,7 +58,7 @@ export const RIEMANN_TUTORIAL_STEPS_BASIC: TutorialStep[] = [
     action: "Selecciona un tipo de aproximación",
     fairyMessage: "¡Cada tipo de hechizo da una aproximación diferente! ¡Experimenta con todos!",
     hint: "✨ Centro suele dar la mejor aproximación, pero ¡experimenta con todos los tipos!",
-    requirement: (approximationType: string) => approximationType && approximationType !== "middle",
+    requirement: (approximationType: string) => Boolean(approximationType && approximationType !== "middle"),
   },
   {
     id: 6,
@@ -125,7 +125,7 @@ export const RIEMANN_TUTORIAL_STEPS_ADVANCED: TutorialStep[] = [
     action: "Selecciona 'Onda Senoidal'",
     fairyMessage: "¡La función seno tiene una forma ondulante! ¡Observa cómo las sumas se adaptan a esta nueva forma!",
     hint: "🌊 La función seno oscila entre -1 y 1. ¡Observa cómo las sumas de Riemann capturan estas oscilaciones!",
-    requirement: (currentFunction: string) => currentFunction && currentFunction !== "quadratic",
+    requirement: (currentFunction: string) => Boolean(currentFunction && currentFunction !== "quadratic"),
   },
   {
     id: 5,
@@ -136,7 +136,7 @@ export const RIEMANN_TUTORIAL_STEPS_ADVANCED: TutorialStep[] = [
     action: "Cambia el tipo de aproximación",
     fairyMessage: "¡Cada tipo de aproximación da resultados diferentes! ¡Experimenta para encontrar el mejor!",
     hint: "⚖️ Centro suele ser más preciso, pero izquierda y derecha son útiles para entender límites. ¡La elección depende de tu objetivo!",
-    requirement: (approximationType: string) => approximationType && approximationType !== "middle",
+    requirement: (approximationType: string) => Boolean(approximationType && approximationType !== "middle"),
   },
   {
     id: 6,
@@ -242,7 +242,7 @@ export const BRIDGE_TUTORIAL_STEPS_ADVANCED: TutorialStep[] = [
     action: "Selecciona una función diferente",
     fairyMessage: "¡Cada función crea un puente único! ¡Observa cómo cambia la forma y el área acumulada!",
     hint: "🌈 Diferentes funciones crean diferentes puentes. ¡Observa cómo la forma del puente afecta la acumulación del área!",
-    requirement: (currentFunction: string) => currentFunction && currentFunction !== "quadratic",
+    requirement: (currentFunction: string) => Boolean(currentFunction && currentFunction !== "quadratic"),
   },
   {
     id: 3,
