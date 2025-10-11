@@ -26,16 +26,16 @@ export function TowerVisualization({
 }: TowerVisualizationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Función matemática
+  // Función matemática - escalada correctamente para el rango -4 a 4
   const f = useCallback((x: number): number => {
     try {
       switch (functionType) {
         case "quadratic":
-          return 0.3 * x * x - 1
+          return (x * x) / 4  // x² escalada: f(4) = 4, f(-4) = 4
         case "cubic":
-          return 0.1 * x * x * x - 0.5 * x
+          return (x * x * x) / 16  // x³ escalada: f(4) = 4, f(-4) = -4
         case "sin":
-          return 2 * Math.sin(x)
+          return 4 * Math.sin(x)  // sin(x) escalada: rango [-4, 4]
         case "custom":
           if (customFunction) {
             const func = new Function("x", `return ${customFunction}`)
@@ -44,7 +44,7 @@ export function TowerVisualization({
           }
           return 0
         default:
-          return 0
+          return (x * x) / 4  // Por defecto x² escalada
       }
     } catch {
       return 0
@@ -79,85 +79,99 @@ export function TowerVisualization({
     // Limpiar canvas
     ctx.clearRect(0, 0, width, height)
 
-    // Fondo mágico
+    // Fondo degradado púrpura-rosa
     const gradient = ctx.createLinearGradient(0, 0, 0, height)
-    gradient.addColorStop(0, "#E0E7FF") // Azul claro
-    gradient.addColorStop(0.7, "#F0FDF4") // Verde claro
-    gradient.addColorStop(1, "#FEF3C7") // Amarillo claro
+    gradient.addColorStop(0, "#D1C4E9") // Púrpura claro
+    gradient.addColorStop(1, "#F8BBD0") // Rosa claro
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, width, height)
 
-    // Base de la torre (césped)
-    const baseY = height - 80
-    const baseHeight = 20
+    // Base de la torre (césped verde)
+    const baseY = height - 50
     
     // Dibujar césped con textura
-    ctx.fillStyle = "#22C55E"
-    ctx.fillRect(0, baseY, width, baseHeight)
+    ctx.fillStyle = "#4CAF50"
+    ctx.fillRect(0, baseY, width, 50)
     
-    // Textura del césped
-    ctx.strokeStyle = "#16A34A"
+    // Textura del césped (líneas diagonales)
+    ctx.strokeStyle = "#2E7D32"
     ctx.lineWidth = 1
-    for (let i = 0; i < width; i += 10) {
+    for (let i = 0; i < width; i += 8) {
       ctx.beginPath()
       ctx.moveTo(i, baseY)
-      ctx.lineTo(i + 5, baseY - 3)
+      ctx.lineTo(i + 4, baseY - 2)
       ctx.stroke()
     }
 
     // Calcular parámetros de la torre
     const towerWidth = width - 100
     const towerStartX = 50
-    const maxHeight = height - 120
     const meanHeight = calculateMeanHeight()
-    const meanHeightScreen = baseY - (meanHeight + 2) * 20
+    const meanHeightScreen = baseY - (meanHeight + 1) * 30
 
-    // Dibujar segmentos de la torre
-    const numSegments = 100
-    const segmentWidth = towerWidth / numSegments
+    // Dibujar la torre como barras verticales (histograma)
+    const numBars = 50
+    const barWidth = towerWidth / numBars
     
-    for (let i = 0; i < numSegments; i++) {
-      const x = a + (i / numSegments) * (b - a)
+    // Calcular el rango de valores de f(x) en el intervalo [a, b]
+    let minY = Infinity, maxY = -Infinity
+    for (let i = 0; i < numBars; i++) {
+      const x = a + (i / numBars) * (b - a)
       const y = f(x)
-      const segmentHeight = (y + 2) * 20
-      const segmentX = towerStartX + i * segmentWidth
-      const segmentY = baseY - segmentHeight
+      minY = Math.min(minY, y)
+      maxY = Math.max(maxY, y)
+    }
+    
+    // Escalar las alturas para que se vean bien
+    const yRange = maxY - minY
+    const scaleFactor = yRange > 0 ? 100 / yRange : 1
+    
+    for (let i = 0; i < numBars; i++) {
+      const x = a + (i / numBars) * (b - a)
+      const y = f(x)
+      const barHeight = Math.max(5, (y - minY) * scaleFactor)  // Altura mínima de 5px
+      const barX = towerStartX + i * barWidth
+      const barY = baseY - barHeight
 
-      // Color del segmento basado en la altura
+      // Color del segmento basado en la altura - colores más vibrantes
       const intensity = Math.min(1, (y + 2) / 4)
-      const r = Math.floor(138 + intensity * 117) // 138-255
-      const g = Math.floor(43 + intensity * 212) // 43-255
-      const blue = Math.floor(226 + intensity * 29) // 226-255
+      const r = Math.floor(100 + intensity * 155) // 100-255
+      const g = Math.floor(50 + intensity * 205) // 50-255
+      const blue = Math.floor(150 + intensity * 105) // 150-255
       
       ctx.fillStyle = `rgb(${r}, ${g}, ${blue})`
-      ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight)
+      ctx.fillRect(barX, barY, barWidth, barHeight)
 
-      // Borde del segmento
-      ctx.strokeStyle = `rgba(${r}, ${g}, ${blue}, 0.8)`
+      // Borde del segmento más oscuro
+      ctx.strokeStyle = `rgba(${Math.floor(r * 0.7)}, ${Math.floor(g * 0.7)}, ${Math.floor(blue * 0.7)}, 0.9)`
       ctx.lineWidth = 1
-      ctx.strokeRect(segmentX, segmentY, segmentWidth, segmentHeight)
+      ctx.strokeRect(barX, barY, barWidth, barHeight)
     }
 
-    // Línea de altura promedio
-    ctx.strokeStyle = "#F59E0B"
+    // Línea de altura promedio (naranja)
+    const meanHeightScaled = (meanHeight - minY) * scaleFactor
+    const meanHeightScreenScaled = baseY - meanHeightScaled
+    
+    ctx.strokeStyle = "#FF9800"
     ctx.lineWidth = 3
-    ctx.setLineDash([10, 5])
+    ctx.setLineDash([8, 4])
     ctx.beginPath()
-    ctx.moveTo(towerStartX, meanHeightScreen)
-    ctx.lineTo(towerStartX + towerWidth, meanHeightScreen)
+    ctx.moveTo(towerStartX, meanHeightScreenScaled)
+    ctx.lineTo(towerStartX + towerWidth, meanHeightScreenScaled)
     ctx.stroke()
     ctx.setLineDash([])
 
     // Etiqueta de altura promedio
-    ctx.fillStyle = "#92400E"
-    ctx.font = "12px Arial"
-    ctx.textAlign = "center"
-    ctx.fillText("Altura promedio", towerStartX + towerWidth / 2, meanHeightScreen - 10)
+    ctx.fillStyle = "#FF9800"
+    ctx.font = "bold 12px Arial"
+    ctx.textAlign = "left"
+    ctx.fillText("Altura promedio", towerStartX + towerWidth + 10, meanHeightScreen + 5)
 
     // Marcadores especiales
     if (userEstimateC !== null) {
       const userX = towerStartX + ((userEstimateC - a) / (b - a)) * towerWidth
-      const userY = baseY - (f(userEstimateC) + 2) * 20
+      const userYValue = f(userEstimateC)
+      const userY = baseY - (userYValue - minY) * scaleFactor
       
       // Marcador del usuario
       ctx.fillStyle = "#EC4899"
@@ -169,16 +183,28 @@ export function TowerVisualization({
       ctx.lineWidth = 2
       ctx.stroke()
       
+      // Línea tangente del usuario (línea horizontal que representa la pendiente)
+      ctx.strokeStyle = "#EC4899"
+      ctx.lineWidth = 2
+      ctx.setLineDash([4, 2])
+      const tangentLength = 40
+      ctx.beginPath()
+      ctx.moveTo(userX - tangentLength/2, userY)
+      ctx.lineTo(userX + tangentLength/2, userY)
+      ctx.stroke()
+      ctx.setLineDash([])
+
       // Etiqueta del usuario
-      ctx.fillStyle = "#BE185D"
-      ctx.font = "10px Arial"
+      ctx.fillStyle = "#EC4899"
+      ctx.font = "bold 10px Arial"
       ctx.textAlign = "center"
-      ctx.fillText("Tu c", userX, userY - 15)
+      ctx.fillText("Tu c", userX, userY - 20)
     }
 
     if (actualC !== undefined) {
       const actualX = towerStartX + ((actualC - a) / (b - a)) * towerWidth
-      const actualY = baseY - (f(actualC) + 2) * 20
+      const actualYValue = f(actualC)
+      const actualY = baseY - (actualYValue - minY) * scaleFactor
       
       // Marcador real
       ctx.fillStyle = "#F59E0B"
@@ -197,7 +223,7 @@ export function TowerVisualization({
       ctx.fillText("c real", actualX, actualY - 15)
     }
 
-    // Título de la torre
+    // Título de la torre con iconos de castillo
     ctx.fillStyle = "#1F2937"
     ctx.font = "bold 16px Arial"
     ctx.textAlign = "center"
@@ -230,11 +256,15 @@ export function TowerVisualization({
     // Convertir coordenadas de pantalla a coordenadas matemáticas
     const towerStartX = 50
     const towerWidth = canvas.width - 100
-    const mathX = a + ((x - towerStartX) / towerWidth) * (b - a)
-
-    // Verificar que el clic esté dentro del rango válido
-    if (mathX >= a && mathX <= b) {
-      onEstimateC(mathX)
+    
+    // Verificar que el clic esté dentro del área de la torre
+    if (x >= towerStartX && x <= towerStartX + towerWidth) {
+      const mathX = a + ((x - towerStartX) / towerWidth) * (b - a)
+      
+      // Verificar que esté dentro del rango válido
+      if (mathX >= a && mathX <= b) {
+        onEstimateC(mathX)
+      }
     }
   }, [a, b, onEstimateC, isLocked])
 

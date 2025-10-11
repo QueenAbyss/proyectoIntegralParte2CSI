@@ -75,16 +75,16 @@ export function VisualizationSection({ timerState, setTimerState, exampleData, o
     }
   }, [exampleData])
 
-  // Función matemática actual
+  // Función matemática - escalada correctamente para el rango -4 a 4
   const f = useCallback((x: number): number => {
     try {
       switch (functionType) {
         case "quadratic":
-          return 0.3 * x * x - 1
+          return (x * x) / 4  // x² escalada: f(4) = 4, f(-4) = 4
         case "cubic":
-          return 0.1 * x * x * x - 0.5 * x
+          return (x * x * x) / 16  // x³ escalada: f(4) = 4, f(-4) = -4
         case "sin":
-          return 2 * Math.sin(x)
+          return 4 * Math.sin(x)  // sin(x) escalada: rango [-4, 4]
         case "custom":
           if (customFunction) {
             const func = new Function("x", `return ${customFunction}`)
@@ -93,7 +93,7 @@ export function VisualizationSection({ timerState, setTimerState, exampleData, o
           }
           return 0
         default:
-          return 0
+          return (x * x) / 4  // Por defecto x² escalada
       }
     } catch {
       return 0
@@ -506,8 +506,8 @@ export function VisualizationSection({ timerState, setTimerState, exampleData, o
               <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-semibold text-gray-800 dark:text-gray-100">
-                    Resultado
-                  </h4>
+                  Resultado
+                </h4>
                   <div className="text-xs font-medium">
                     {result.error < 0.1 ? (
                       <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
