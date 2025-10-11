@@ -89,7 +89,50 @@ export function VisualizationSection({ timerState, setTimerState, exampleData, o
           if (customFunction) {
             const func = new Function("x", `return ${customFunction}`)
             const result = func(x)
-            return isFinite(result) ? result : 0
+            
+            if (!isFinite(result)) return 0
+            
+            // Escalado automático para funciones personalizadas
+            // Encuentra el rango de la función en el intervalo visible
+            const samplePoints = 100
+            let minVal = Infinity
+            let maxVal = -Infinity
+            
+            for (let i = 0; i <= samplePoints; i++) {
+              const testX = -4 + (i / samplePoints) * 8
+              const testY = func(testX)
+              if (isFinite(testY)) {
+                minVal = Math.min(minVal, testY)
+                maxVal = Math.max(maxVal, testY)
+              }
+            }
+            
+            // Escalar proporcionalmente manteniendo la forma natural
+            const range = maxVal - minVal
+            if (range === 0) return 0
+            
+            // Escalar para que quepa en el rango [-4, 4] manteniendo la forma
+            const scale = 8 / range  // 8 es el rango total de -4 a 4
+            const scaledResult = result * scale
+            
+            // Para funciones como x², mantener la forma natural sin centrar
+            // Si la función es siempre positiva (como x²), mantenerla arriba
+            if (minVal >= 0) {
+              // Función siempre positiva: escalar y mantener arriba
+              const finalResult = scaledResult - (minVal * scale)
+              return Math.max(-4, Math.min(4, finalResult))
+            } else if (maxVal <= 0) {
+              // Función siempre negativa: escalar y mantener abajo
+              const finalResult = scaledResult - (maxVal * scale)
+              return Math.max(-4, Math.min(4, finalResult))
+            } else {
+              // Función mixta: centrar normalmente
+              const center = (maxVal + minVal) / 2
+              const scaledCenter = center * scale
+              const offset = -scaledCenter
+              const finalResult = scaledResult + offset
+              return Math.max(-4, Math.min(4, finalResult))
+            }
           }
           return 0
         default:
