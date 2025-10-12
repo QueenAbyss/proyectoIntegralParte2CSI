@@ -7,6 +7,8 @@ import { Sparkles, BookOpen, Eye, Lightbulb } from "lucide-react"
 import { TheorySection } from "./mean-value-theorem/theory-section"
 import { VisualizationSection } from "./mean-value-theorem/visualization-section"
 import { ExamplesSection } from "./mean-value-theorem/examples-section"
+import { FundamentalTheoremVisualization } from "./fundamental-theorem/visualization-section"
+import { FundamentalTheoremExamples } from "./fundamental-theorem/examples-section"
 
 export function MeanValueTower() {
   const [mainTab, setMainTab] = useState("teoria")
@@ -129,14 +131,146 @@ export function MeanValueTower() {
               </div>
             </TabsContent>
 
-            <TabsContent value="teorema-fundamental" className="p-6">
-              <div className="text-center py-12">
-                <h3 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                  Próximamente: 2do Teorema Fundamental
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Esta sección estará disponible en futuras actualizaciones
-                </p>
+            <TabsContent value="teorema-fundamental" className="p-0">
+              <div className="p-6">
+                {/* Navegación secundaria para Segundo Teorema Fundamental */}
+                <div className="mb-6">
+                  <Tabs value={subTab} onValueChange={setSubTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-gray-50 dark:bg-gray-800">
+                      <TabsTrigger value="teoria" className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        Teoría
+                      </TabsTrigger>
+                      <TabsTrigger value="visualizaciones" className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        Visualizaciones
+                      </TabsTrigger>
+                      <TabsTrigger value="ejemplos" className="flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4" />
+                        Ejemplos
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
+                {/* Contenido según la pestaña activa */}
+                {subTab === "teoria" && (
+                  <div className="space-y-8">
+                    {/* Header */}
+                    <div className="text-center">
+                      <h2 className="text-3xl font-bold text-purple-800 dark:text-purple-200 mb-2">
+                        Segundo Teorema Fundamental del Cálculo
+                      </h2>
+                      <p className="text-lg text-purple-600 dark:text-purple-300">
+                        La conexión entre derivadas e integrales
+                      </p>
+                    </div>
+
+                {/* Enunciado */}
+                <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                    Enunciado
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      Si <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">f</span> es continua en <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">[a, b]</span> y <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F</span> es una antiderivada de <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">f</span> en <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">[a, b]</span>, entonces:
+                    </p>
+                    
+                    {/* Fórmula principal */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-700">
+                      <div className="text-center">
+                        <div className="text-2xl font-mono text-blue-800 dark:text-blue-300">
+                          ∫<sub>a</sub><sup>b</sup> f(x) dx = F(b) - F(a)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* ¿Qué es una Antiderivada? */}
+                <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                    ¿Qué es una Antiderivada?
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F(x)</span> es una antiderivada de <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">f(x)</span> si <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F'(x) = f(x)</span>. Es decir, cuando derivas <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F</span>, obtienes <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">f</span>.
+                    </p>
+                  </div>
+                </Card>
+
+                {/* La magia del teorema */}
+                <Card className="p-6 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-yellow-200 dark:border-yellow-800">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                    La magia del teorema
+                  </h3>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-yellow-300 dark:border-yellow-700">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-center font-medium">
+                      En lugar de sumar infinitos rectángulos para calcular el área, solo necesitas encontrar <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F(x)</span> y calcular <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F(b) - F(a)</span>.
+                    </p>
+                  </div>
+                </Card>
+
+                {/* Ejemplos de Antiderivadas */}
+                <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                    Ejemplos de Antiderivadas
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Si f(x) = x</p>
+                        <div className="font-mono text-lg text-purple-800 dark:text-purple-200">
+                          F(x) = x²/2
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Si f(x) = x²</p>
+                        <div className="font-mono text-lg text-purple-800 dark:text-purple-200">
+                          F(x) = x³/3
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Si f(x) = sin(x)</p>
+                        <div className="font-mono text-lg text-purple-800 dark:text-purple-200">
+                          F(x) = -cos(x)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* ¿Por qué funciona? */}
+                <Card className="p-6 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20 border-indigo-200 dark:border-indigo-800">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                    ¿Por qué funciona?
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    El teorema conecta dos operaciones inversas: derivar e integrar. Si <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F'(x) = f(x)</span>, entonces integrar <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">f</span> te devuelve <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">F</span> (más una constante que se cancela al restar).
+                  </p>
+                </Card>
+                  </div>
+                )}
+
+                {/* Sección de Visualizaciones */}
+                {subTab === "visualizaciones" && (
+                  <FundamentalTheoremVisualization 
+                    timerState={mvtTimerState}
+                    setTimerState={setMvtTimerState}
+                    exampleData={exampleData}
+                    onExampleLoaded={setExampleData}
+                  />
+                )}
+
+                {/* Sección de Ejemplos */}
+                {subTab === "ejemplos" && (
+                  <FundamentalTheoremExamples 
+                    onLoadExample={(data) => {
+                      setExampleData(data)
+                      setSubTab("visualizaciones") // Cambiar automáticamente a visualizaciones
+                    }}
+                  />
+                )}
               </div>
             </TabsContent>
           </Tabs>
