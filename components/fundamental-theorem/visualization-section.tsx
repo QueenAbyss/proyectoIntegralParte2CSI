@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Target, Calculator, CheckCircle, XCircle, Clock, Trophy, Star, Award, Zap } from "lucide-react"
+import { MathKeyboard } from "@/components/mean-value-theorem/math-keyboard"
 
 interface TimerState {
   startTime: number | null
@@ -50,12 +51,13 @@ export function FundamentalTheoremVisualization({
   const [customFunction, setCustomFunction] = useState("x")
   const [currentStep, setCurrentStep] = useState(2)
   const [userF, setUserF] = useState("")
-  const [userF_a, setUserF_a] = useState<number | null>(null)
-  const [userF_b, setUserF_b] = useState<number | null>(null)
-  const [userResult, setUserResult] = useState<number | null>(null)
+  const [userF_a, setUserF_a] = useState<string>("")
+  const [userF_b, setUserF_b] = useState<string>("")
+  const [userResult, setUserResult] = useState<string>("")
   const [isValidating, setIsValidating] = useState(false)
   const [validationError, setValidationError] = useState("")
-  const [showMathKeyboard, setShowMathKeyboard] = useState(false)
+  const [step2Error, setStep2Error] = useState("")
+  const [step3Error, setStep3Error] = useState("")
 
   // Estados de logros
   const [achievements, setAchievements] = useState<Achievement[]>([
@@ -98,6 +100,15 @@ export function FundamentalTheoremVisualization({
   const [showNotification, setShowNotification] = useState(false)
   const [currentNotification, setCurrentNotification] = useState<Achievement | null>(null)
   const [isLoadingExample, setIsLoadingExample] = useState(false)
+  const [showMathKeyboard, setShowMathKeyboard] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [finalResult, setFinalResult] = useState<{
+    userCalculation: number
+    correctCalculation: number
+    integralValue: number
+    F_a: number
+    F_b: number
+  } | null>(null)
 
   // Aplicar datos del ejemplo cuando se carguen
   useEffect(() => {
@@ -126,6 +137,20 @@ export function FundamentalTheoremVisualization({
       // No hacer nada aquí, solo mantener el estado actual
     }
   }, [a, b, isLoadingExample, currentStep])
+
+  // Resetear paso cuando cambie la función a integrar
+  useEffect(() => {
+    if (!isLoadingExample && currentStep > 1) {
+      // Si cambiamos la función, limpiar todo y volver al paso 2
+      setCurrentStep(2)
+      setUserF("")
+      setUserF_a(null)
+      setUserF_b(null)
+      setUserResult(null)
+      setValidationError("")
+      setIsValidating(false)
+    }
+  }, [functionType, customFunction, isLoadingExample])
 
   // Función original f(x)
   const f = useCallback((x: number): number => {
@@ -264,49 +289,6 @@ export function FundamentalTheoremVisualization({
     }
   }, [])
 
-  // Validación de F(b) - F(a)
-  const validateFTC = useCallback((
-    userF: string,
-    a: number,
-    b: number,
-    userF_a: number,
-    userF_b: number,
-    userResult: number
-  ): boolean => {
-    try {
-      const F = new Function("x", `return ${userF}`)
-      
-      // Calcular valores correctos
-      const correctF_a = F(a)
-      const correctF_b = F(b)
-      const correctResult = correctF_b - correctF_a
-
-      // Validar F(a)
-      if (Math.abs(userF_a - correctF_a) > 1e-6) {
-        setValidationError(`F(${a}) incorrecto. Valor correcto: ${correctF_a.toFixed(3)}`)
-        return false
-      }
-
-      // Validar F(b)
-      if (Math.abs(userF_b - correctF_b) > 1e-6) {
-        setValidationError(`F(${b}) incorrecto. Valor correcto: ${correctF_b.toFixed(3)}`)
-        return false
-      }
-
-      // Validar F(b) - F(a)
-      if (Math.abs(userResult - correctResult) > 1e-6) {
-        setValidationError(`F(${b}) - F(${a}) incorrecto. Valor correcto: ${correctResult.toFixed(3)}`)
-        return false
-      }
-
-      setValidationError("")
-      return true
-
-    } catch (err) {
-      setValidationError("Error al validar los cálculos")
-      return false
-    }
-  }, [])
 
   // Sistema de logros
   const unlockAchievement = useCallback((achievementId: string) => {
@@ -332,6 +314,8 @@ export function FundamentalTheoremVisualization({
       if (validateAntiderivative(userF, f, a, b)) {
         setCurrentStep(3)
         unlockAchievement("first_antiderivative")
+        setStep2Error("") // Limpiar errores del paso 2
+        setStep3Error("") // Limpiar errores del paso 3
         
         // Iniciar temporizador si no está corriendo
         if (setTimerState && (!timerState?.isRunning)) {
@@ -341,26 +325,92 @@ export function FundamentalTheoremVisualization({
             isRunning: true,
           })
         }
+      } else {
+        setStep2Error("Antiderivada incorrecta. Revisa tu función F(x).")
       }
       setIsValidating(false)
     }, 1000)
   }, [userF, f, a, b, validateAntiderivative, unlockAchievement, setTimerState, timerState?.isRunning])
 
   // Manejar validación de F(b) - F(a)
+  // Función para manejar entrada de números decimales
+  const handleNumberInput = useCallback((
+    value: string, 
+    setter: (value: string) => void
+  ) => {
+    // Permitir solo números, punto decimal, signo negativo y espacios
+    const validPattern = /^[-]?[0-9]*\.?[0-9]*$/
+    
+    if (validPattern.test(value) || value === "") {
+      setter(value)
+      setValidationError("")
+    }
+    // Si no es válido, no hacer nada (no actualizar el estado)
+  }, [])
+
+  // Función para validar si un string es un número válido
+  const isValidNumber = useCallback((value: string): boolean => {
+    if (value === "" || value === "." || value === "-" || value === "-.") {
+      return false
+    }
+    const num = parseFloat(value)
+    return !isNaN(num) && isFinite(num)
+  }, [])
+
+  // Función para validar F(b) - F(a) al confirmar
+  const validateFTC = useCallback((
+    userF: string,
+    a: number,
+    b: number,
+    userResult: string
+  ): boolean => {
+    try {
+      // 1. Verificar que el resultado sea un número válido
+      if (!isValidNumber(userResult)) {
+        return false
+      }
+      
+      // 2. Convertir a número
+      const userFTCResult = parseFloat(userResult)
+      
+      // 3. Calcular F(x) usando la función del usuario
+      const F = new Function("x", `return ${userF}`)
+      
+      // 4. Calcular valor correcto
+      const correctF_a = F(a)
+      const correctF_b = F(b)
+      const correctResult = correctF_b - correctF_a
+      
+      // 5. Validar con tolerancia para errores de punto flotante
+      const tolerance = 1e-6
+      const isResult_correct = Math.abs(userFTCResult - correctResult) < tolerance
+      
+      return isResult_correct
+      
+    } catch (err) {
+      console.error("Error al validar FTC:", err)
+      return false
+    }
+  }, [isValidNumber])
+
   const handleFTCSubmit = useCallback(() => {
     setIsValidating(true)
     
     setTimeout(() => {
-      // Calcular F(a) y F(b) automáticamente
-      try {
-        const F = new Function("x", `return ${userF}`)
-        const F_a = F(a)
-        const F_b = F(b)
+      // Solo manejar paso 3: Validar F(b) - F(a) (campos numéricos)
+      if (currentStep >= 3) {
+        if (!isValidNumber(userResult)) {
+          setStep3Error("El resultado debe ser un número válido")
+          setIsValidating(false)
+          return
+        }
         
-        if (validateFTC(userF, a, b, F_a, F_b, userResult!)) {
+        // Validar F(b) - F(a) usando la nueva función
+        if (validateFTC(userF, a, b, userResult)) {
           setCurrentStep(4)
           unlockAchievement("calculator_expert")
           unlockAchievement("verifier")
+          setStep3Error("") // Limpiar errores del paso 3
           
           // Verificar logros específicos por tipo de función
           if (functionType === "quadratic" || functionType === "cubic") {
@@ -370,22 +420,54 @@ export function FundamentalTheoremVisualization({
             unlockAchievement("trigonometric")
           }
           
-          // Detener temporizador
-          if (setTimerState) {
-            setTimerState({
-              startTime: null,
-              elapsedTime: timerState?.elapsedTime || 0,
-              isRunning: false,
+          // Calcular valores para el mensaje de éxito
+          try {
+            const F = new Function("x", `return ${userF}`)
+            const F_a = F(a)
+            const F_b = F(b)
+            const correctResult = F_b - F_a
+            
+            setFinalResult({
+              userCalculation: parseFloat(userResult),
+              correctCalculation: correctResult,
+              integralValue: correctResult,
+              F_a: F_a,
+              F_b: F_b
             })
+            setShowSuccessMessage(true)
+            
+            // Detener temporizador
+            if (setTimerState) {
+              setTimerState({
+                startTime: null,
+                elapsedTime: timerState?.elapsedTime || 0,
+                isRunning: false,
+              })
+            }
+          } catch (error) {
+            console.error("Error al calcular resultado final:", error)
           }
+        } else {
+          setStep3Error("Cálculo incorrecto. Revisa tus valores.")
         }
-      } catch (error) {
-        setValidationError("Error al calcular F(a) o F(b)")
       }
+      
       setIsValidating(false)
     }, 1000)
-  }, [userF, a, b, userResult, validateFTC, unlockAchievement, functionType, setTimerState, timerState?.elapsedTime])
+  }, [currentStep, validateFTC, isValidNumber, unlockAchievement, functionType, setFinalResult, setShowSuccessMessage, setTimerState, timerState?.isRunning, timerState?.elapsedTime, userResult, userF, a, b])
 
+  // Manejar teclas del teclado matemático
+  const handleKeyboardInput = useCallback((value: string) => {
+    setUserF(prev => prev + value)
+  }, [])
+
+  const handleKeyboardDelete = useCallback(() => {
+    setUserF(prev => prev.slice(0, -1))
+  }, [])
+
+  const handleKeyboardClear = useCallback(() => {
+    setUserF("")
+  }, [])
 
   // Dibujar visualización
   const drawVisualization = useCallback(() => {
@@ -825,10 +907,10 @@ export function FundamentalTheoremVisualization({
                       {isValidating ? "Verificando..." : "Confirmar"}
                     </Button>
                   </div>
-                  {validationError && (
+                  {step2Error && (
                     <div className="flex items-center gap-2 text-red-600 text-sm p-2 bg-red-50 rounded border border-red-200">
                       <XCircle className="w-4 h-4" />
-                      {validationError}
+                      {step2Error}
                     </div>
                   )}
                 </div>
@@ -881,26 +963,31 @@ export function FundamentalTheoremVisualization({
                         Tu resultado: F(b) - F(a) =
                       </label>
                       <Input
-                        type="number"
-                        value={userResult || ""}
-                        onChange={(e) => setUserResult(parseFloat(e.target.value))}
-                        className="font-mono"
-                        step="0.001"
-                        placeholder="Calcula F(b) - F(a)"
+                        type="text"
+                        value={userResult}
+                        onChange={(e) => handleNumberInput(e.target.value, setUserResult)}
+                        className={`font-mono ${
+                          userResult === "" 
+                            ? "border-gray-300 focus:border-blue-500" 
+                            : isValidNumber(userResult)
+                              ? "border-green-500 bg-green-50 focus:border-green-600" 
+                              : "border-red-500 bg-red-50 focus:border-red-600"
+                        }`}
+                        placeholder="Ej: 2.6667"
                       />
                     </div>
                   </div>
                   <Button
                     onClick={handleFTCSubmit}
-                    disabled={userResult === null || isValidating}
+                    disabled={!isValidNumber(userResult) || isValidating}
                     className="bg-yellow-600 hover:bg-yellow-700 w-full"
                   >
                     {isValidating ? "Verificando..." : "Confirmar"}
                   </Button>
-                  {validationError && (
+                  {step3Error && (
                     <div className="flex items-center gap-2 text-red-600 text-sm p-2 bg-red-50 rounded border border-red-200">
                       <XCircle className="w-4 h-4" />
-                      {validationError}
+                      {step3Error}
                     </div>
                   )}
                 </div>
@@ -935,9 +1022,86 @@ export function FundamentalTheoremVisualization({
               </Card>
             )}
 
+            {/* Mensaje de éxito detallado */}
+            {showSuccessMessage && finalResult && (
+              <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-800">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                    <CheckCircle className="w-6 h-6" />
+                    <h3 className="text-xl font-bold">¡Correcto! El teorema funciona perfectamente.</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-green-800 dark:text-green-200">Tu cálculo:</h4>
+                      <p className="font-mono text-lg">F(b) - F(a) = {finalResult.userCalculation.toFixed(3)}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-green-800 dark:text-green-200">Cálculo correcto:</h4>
+                      <p className="font-mono text-lg">
+                        {finalResult.F_b.toFixed(4)} - {finalResult.F_a.toFixed(4)} = {finalResult.correctCalculation.toFixed(4)}
+                      </p>
+                    </div>
+                    
+                    <hr className="border-green-300" />
+                    
+                    <div>
+                      <h4 className="font-semibold text-green-800 dark:text-green-200">Área bajo la curva:</h4>
+                      <p className="font-mono text-lg">∫f(x)dx ≈ {finalResult.integralValue.toFixed(4)}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                      <span className="text-2xl">✨</span>
+                      <span className="font-semibold">El teorema confirma: F(b) - F(a) = ∫f(x)dx</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button 
+                      onClick={() => {
+                        setShowSuccessMessage(false)
+                        setFinalResult(null)
+                        setCurrentStep(2)
+                        setUserF("")
+                        setUserF_a(null)
+                        setUserF_b(null)
+                        setUserResult(null)
+                        setValidationError("")
+                      }}
+                      className="bg-gray-600 hover:bg-gray-700 text-white"
+                    >
+                      <span className="mr-2">✨</span>
+                      Intentar Otro Problema
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
           </div>
         </div>
       </div>
+
+      {/* Teclado matemático */}
+      {showMathKeyboard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Teclado Matemático</h3>
+              <Button onClick={() => setShowMathKeyboard(false)} variant="outline" size="sm">
+                ✕
+              </Button>
+            </div>
+            <MathKeyboard
+              onInput={handleKeyboardInput}
+              onDelete={handleKeyboardDelete}
+              onClear={handleKeyboardClear}
+              currentValue={userF}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

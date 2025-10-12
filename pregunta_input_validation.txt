@@ -1,0 +1,87 @@
+PROBLEMA: Input de validación no permite escribir números decimales correctamente
+
+DESCRIPCIÓN DEL ERROR:
+- El usuario no puede escribir "2.6667" en el input de resultado
+- La validación está bloqueando la entrada de números decimales
+- El undo/borrado no funciona correctamente
+- Los puntos decimales se bloquean
+
+CÓDIGO ACTUAL (PROBLEMÁTICO):
+```javascript
+onChange={(e) => {
+  const value = e.target.value
+  // Validación muy simple - solo bloquear letras
+  if (value === "" || !/[a-zA-Z]/.test(value)) {
+    if (value === "" || value === "." || value === "-" || value === "-.") {
+      setUserResult(null)
+    } else {
+      const numValue = parseFloat(value)
+      setUserResult(isNaN(numValue) ? null : numValue)
+    }
+  }
+}}
+```
+
+PROBLEMAS IDENTIFICADOS:
+1. La lógica de validación es confusa
+2. Los estados intermedios como "2." se resetean a null
+3. No permite escribir números decimales paso a paso
+4. El parseFloat puede fallar en estados intermedios
+
+SOLUCIÓN PROPUESTA:
+```javascript
+onChange={(e) => {
+  const value = e.target.value
+  
+  // Permitir cualquier entrada que no contenga letras
+  if (value === "" || !/[a-zA-Z]/.test(value)) {
+    // Si está vacío, resetear
+    if (value === "") {
+      setUserResult(null)
+      return
+    }
+    
+    // Intentar parsear el número
+    const numValue = parseFloat(value)
+    
+    // Si es un número válido, guardarlo
+    if (!isNaN(numValue)) {
+      setUserResult(numValue)
+    } else {
+      // Si no es válido pero no contiene letras, permitir la entrada
+      // Esto permite estados intermedios como "2." o "-"
+      setUserResult(value)
+    }
+  }
+}}
+```
+
+ALTERNATIVA MÁS SIMPLE:
+```javascript
+onChange={(e) => {
+  const value = e.target.value
+  
+  // Solo bloquear letras, permitir todo lo demás
+  if (value === "" || !/[a-zA-Z]/.test(value)) {
+    setUserResult(value)
+  }
+}}
+```
+
+Y cambiar el value del input a:
+```javascript
+value={userResult !== null ? userResult.toString() : ""}
+```
+
+PREGUNTAS PARA RESOLVER:
+1. ¿Por qué la validación actual no permite escribir "2.6667"?
+2. ¿Cómo se puede simplificar la validación para permitir números decimales?
+3. ¿Qué cambios específicos necesita el código para funcionar correctamente?
+4. ¿Cómo manejar los estados intermedios como "2." sin resetear el input?
+5. ¿Cuál es la mejor estrategia para validar números decimales en React?
+
+ARCHIVO AFECTADO:
+- components/fundamental-theorem/visualization-section.tsx (líneas 923-934)
+
+PRIORIDAD: ALTA - Bloquea funcionalidad principal del usuario
+
