@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Lightbulb, Star, Sparkles, Crown, Gem, Wand2, CheckCircle, XCircle, RotateCcw } from "lucide-react"
+import { Lightbulb, Star, Sparkles, Crown, Gem, Wand2, CheckCircle, XCircle, RotateCcw, ChevronDown, ChevronUp } from "lucide-react"
 
 interface Example {
   id: string
@@ -24,6 +24,7 @@ export function IndefiniteIntegralsExamples() {
   const [showSolution, setShowSolution] = useState(false)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const [hasAttempted, setHasAttempted] = useState(false)
+  const [showFormatHelp, setShowFormatHelp] = useState(true)
 
   const examples: Example[] = [
     {
@@ -105,10 +106,50 @@ export function IndefiniteIntegralsExamples() {
     const normalizedSolution = currentExample.solution.toLowerCase()
     
     // Verificar si la respuesta es correcta (considerando variaciones)
-    const isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
-                           normalizedUserAnswer === normalizedSolution.replace(/\s/g, '') ||
-                           normalizedUserAnswer.includes('x³/3') && normalizedUserAnswer.includes('c') ||
-                           normalizedUserAnswer.includes('eˣ') && normalizedUserAnswer.includes('c')
+    let isAnswerCorrect = false
+    
+    // Validación específica para cada tipo de ejemplo
+    switch (currentExample.id) {
+      case "basic_power":
+        // ∫ x² dx = x³/3 + C
+        isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
+                         normalizedUserAnswer === normalizedSolution.replace(/\s/g, '') ||
+                         (normalizedUserAnswer.includes('x³/3') || normalizedUserAnswer.includes('x^3/3')) && normalizedUserAnswer.includes('c')
+        break
+        
+      case "exponential":
+        // ∫ eˣ dx = eˣ + C
+        isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
+                         normalizedUserAnswer === normalizedSolution.replace(/\s/g, '') ||
+                         (normalizedUserAnswer.includes('eˣ') || normalizedUserAnswer.includes('e^x')) && normalizedUserAnswer.includes('c')
+        break
+        
+      case "trigonometric":
+        // ∫ sin(x) dx = -cos(x) + C
+        isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
+                         normalizedUserAnswer === normalizedSolution.replace(/\s/g, '') ||
+                         normalizedUserAnswer.includes('-cos(x)') && normalizedUserAnswer.includes('c')
+        break
+        
+      case "polynomial":
+        // ∫ (3x² + 2x + 1) dx = x³ + x² + x + C
+        isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
+                         normalizedUserAnswer === normalizedSolution.replace(/\s/g, '') ||
+                         (normalizedUserAnswer.includes('x³') || normalizedUserAnswer.includes('x^3')) &&
+                         normalizedUserAnswer.includes('x²') && normalizedUserAnswer.includes('x') && normalizedUserAnswer.includes('c')
+        break
+        
+      case "advanced_trig":
+        // ∫ sec²(x) dx = tan(x) + C
+        isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
+                         normalizedUserAnswer === normalizedSolution.replace(/\s/g, '') ||
+                         normalizedUserAnswer.includes('tan(x)') && normalizedUserAnswer.includes('c')
+        break
+        
+      default:
+        isAnswerCorrect = normalizedUserAnswer === normalizedSolution ||
+                         normalizedUserAnswer === normalizedSolution.replace(/\s/g, '')
+    }
     
     setIsCorrect(isAnswerCorrect)
     setHasAttempted(true)
@@ -211,6 +252,35 @@ export function IndefiniteIntegralsExamples() {
 
               <div className="p-4 bg-white/80 rounded-lg border border-purple-300">
                 <h5 className="font-semibold text-purple-800 mb-2">Tu Respuesta:</h5>
+                
+                {/* Mensaje de ayuda desplegable */}
+                <div className="mb-3">
+                  <Button
+                    onClick={() => setShowFormatHelp(!showFormatHelp)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-between bg-blue-50 border-blue-200 hover:bg-blue-100"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-800">💡 Formato sugerido</span>
+                    </div>
+                    {showFormatHelp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                  
+                  {showFormatHelp && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-700">
+                        {currentExample.id === "basic_power" && "Usa: x^3/3 + C (o x³/3 + C)"}
+                        {currentExample.id === "exponential" && "Usa: e^x + C (o eˣ + C)"}
+                        {currentExample.id === "trigonometric" && "Usa: -cos(x) + C"}
+                        {currentExample.id === "polynomial" && "Usa: x^3 + x^2 + x + C (o x³ + x² + x + C)"}
+                        {currentExample.id === "advanced_trig" && "Usa: tan(x) + C"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex gap-2 mb-3">
                   <Input
                     value={userAnswer}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, Star, Crown, Gem, Wand2, Lightbulb } from "lucide-react"
+import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, Star, Crown, Gem, Wand2, Lightbulb, ChevronDown, ChevronUp } from "lucide-react"
 import { AchievementsSystem } from "../mean-value-theorem/achievements-system"
 import { TimerDisplay } from "../mean-value-theorem/timer-display"
 
@@ -43,6 +43,7 @@ export function IndefiniteIntegralsVisualization({
   const [currentNotification, setCurrentNotification] = useState<any>(null)
   const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now())
   const [currentTime, setCurrentTime] = useState<number>(0)
+  const [showCrystalExplanation, setShowCrystalExplanation] = useState(false)
 
   // Funciones matemáticas con temática de hadas
   // f(x) es la función original, F(x) es su antiderivada
@@ -209,9 +210,24 @@ export function IndefiniteIntegralsVisualization({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Fondo blanco limpio
-    ctx.fillStyle = "#FFFFFF"
+    // Fondo con gradiente de cristal mágico
+    const gradient = ctx.createLinearGradient(0, 0, width, height)
+    gradient.addColorStop(0, "#F8F4FF") // Púrpura muy claro
+    gradient.addColorStop(0.5, "#F0E6FF") // Púrpura claro
+    gradient.addColorStop(1, "#E8D8FF") // Púrpura medio claro
+    ctx.fillStyle = gradient
     ctx.fillRect(0, 0, width, height)
+    
+    // Efectos de cristal mágico en el fondo
+    ctx.fillStyle = "rgba(147, 51, 234, 0.03)"
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * width
+      const y = Math.random() * height
+      const size = Math.random() * 3 + 1
+      ctx.beginPath()
+      ctx.arc(x, y, size, 0, Math.PI * 2)
+      ctx.fill()
+    }
 
     // Configuración del plano cartesiano
     const padding = 60
@@ -319,8 +335,14 @@ export function IndefiniteIntegralsVisualization({
       const colors = ["#FF6B6B", "#FF8C00", "#FFA500", "#32CD32", "#4169E1", "#9370DB", "#8A2BE2", "#FF1493", "#00CED1"]
       
       constants.forEach((C, index) => {
-        ctx.strokeStyle = colors[index]
-        ctx.lineWidth = 2
+        // Efecto de cristal para las curvas
+        const crystalGradient = ctx.createLinearGradient(0, 0, width, height)
+        crystalGradient.addColorStop(0, colors[index])
+        crystalGradient.addColorStop(0.5, colors[index] + "80") // Semi-transparente
+        crystalGradient.addColorStop(1, colors[index])
+        
+        ctx.strokeStyle = C === constantC ? "#FFD700" : crystalGradient
+        ctx.lineWidth = C === constantC ? 3 : 2
         ctx.setLineDash(C === constantC ? [] : [5, 5])
         ctx.beginPath()
 
@@ -339,31 +361,68 @@ export function IndefiniteIntegralsVisualization({
         }
         ctx.stroke()
         
-        // Resaltar la constante seleccionada
+        // Efectos de brillo cristalino en puntos clave
         if (C === constantC) {
-          ctx.strokeStyle = "#FFD700"
-          ctx.lineWidth = 3
-          ctx.beginPath()
-          let firstPoint = true
-          for (let x = -4; x <= 4; x += 0.05) {
+          ctx.fillStyle = "rgba(255, 215, 0, 0.6)"
+          for (let x = -4; x <= 4; x += 0.5) {
             const y = currentFunc.F(x, C)
-            // Escalar la función para que quepa en el rango visible
-            const scaledY = Math.max(-4, Math.min(4, y / 4)) // Escalar por 4
+            const scaledY = Math.max(-4, Math.min(4, y / 4))
             const screenCoords = mathToScreen(x, scaledY)
-            if (firstPoint) {
-              ctx.moveTo(screenCoords.x, screenCoords.y)
-              firstPoint = false
-            } else {
-              ctx.lineTo(screenCoords.x, screenCoords.y)
-            }
+            ctx.beginPath()
+            ctx.arc(screenCoords.x, screenCoords.y, 2, 0, Math.PI * 2)
+            ctx.fill()
           }
-          ctx.stroke()
         }
       })
       ctx.setLineDash([])
     }
 
-    // Sin efectos de partículas, solo deslizamiento
+    // Efectos de cristal mágico en las esquinas
+    const drawCrystalCorners = () => {
+      const cornerSize = 30
+      const crystalColor = "rgba(147, 51, 234, 0.1)"
+      
+      // Esquina superior izquierda
+      ctx.fillStyle = crystalColor
+      ctx.beginPath()
+      ctx.moveTo(padding, padding)
+      ctx.lineTo(padding + cornerSize, padding)
+      ctx.lineTo(padding, padding + cornerSize)
+      ctx.closePath()
+      ctx.fill()
+      
+      // Esquina superior derecha
+      ctx.beginPath()
+      ctx.moveTo(width - padding, padding)
+      ctx.lineTo(width - padding - cornerSize, padding)
+      ctx.lineTo(width - padding, padding + cornerSize)
+      ctx.closePath()
+      ctx.fill()
+      
+      // Esquina inferior izquierda
+      ctx.beginPath()
+      ctx.moveTo(padding, height - padding)
+      ctx.lineTo(padding + cornerSize, height - padding)
+      ctx.lineTo(padding, height - padding - cornerSize)
+      ctx.closePath()
+      ctx.fill()
+      
+      // Esquina inferior derecha
+      ctx.beginPath()
+      ctx.moveTo(width - padding, height - padding)
+      ctx.lineTo(width - padding - cornerSize, height - padding)
+      ctx.lineTo(width - padding, height - padding - cornerSize)
+      ctx.closePath()
+      ctx.fill()
+    }
+    
+    drawCrystalCorners()
+
+    // Título mágico del cristal
+    ctx.fillStyle = "rgba(147, 51, 234, 0.8)"
+    ctx.font = "bold 16px Arial"
+    ctx.textAlign = "center"
+    ctx.fillText("💎 Cristal de Antiderivadas 💎", width / 2, padding - 10)
 
     // Etiquetas fijas en la gráfica
     if (showFamily) {
@@ -431,6 +490,69 @@ export function IndefiniteIntegralsVisualization({
 
   return (
     <div className="space-y-4">
+      {/* Explicación del Cristal - Desplegable */}
+      <Card className="p-4 bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-purple-300">
+        <Button
+          onClick={() => setShowCrystalExplanation(!showCrystalExplanation)}
+          variant="outline"
+          className="w-full justify-between bg-purple-50 border-purple-200 hover:bg-purple-100"
+        >
+          <div className="flex items-center gap-2">
+            <Gem className="w-5 h-5 text-purple-600" />
+            <span className="text-sm font-semibold text-purple-800">💎 ¿Por qué "Cristal de Antiderivadas"?</span>
+          </div>
+          {showCrystalExplanation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showCrystalExplanation && (
+          <div className="mt-4 space-y-4">
+            <p className="text-sm text-purple-700 leading-relaxed">
+              Imagina un <strong>cristal mágico</strong> que tiene la capacidad de mostrar todas las posibles 
+              antiderivadas de una función. Cada <strong>faceta del cristal</strong> representa una 
+              antiderivada diferente, y la <strong>constante C</strong> es como el poder mágico que 
+              activa cada faceta.
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="p-3 bg-white/80 rounded-lg border border-purple-300">
+                <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2 text-xs">
+                  <Sparkles className="w-4 h-4" />
+                  Las Facetas del Cristal
+                </h4>
+                <p className="text-purple-700 text-xs">
+                  Cada valor de C crea una nueva faceta brillante en el cristal, mostrando 
+                  una antiderivada diferente. Es como tener infinitas caras del mismo cristal, 
+                  cada una con su propio brillo mágico.
+                </p>
+              </div>
+              
+              <div className="p-3 bg-white/80 rounded-lg border border-purple-300">
+                <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2 text-xs">
+                  <Crown className="w-4 h-4" />
+                  El Poder de C
+                </h4>
+                <p className="text-purple-700 text-xs">
+                  La constante C es como el <strong>poder mágico</strong> que transforma el cristal. 
+                  Al cambiar C, el cristal se transforma, mostrando una nueva faceta de la 
+                  misma función, pero en una posición diferente.
+                </p>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-gradient-to-r from-purple-200 to-pink-200 rounded-lg border border-purple-400">
+              <div className="text-center">
+                <div className="text-sm font-bold text-purple-800 mb-1">✨ La Magia del Cristal ✨</div>
+                <p className="text-purple-700 text-xs">
+                  Cuando visualizas las familias de antiderivadas, estás viendo todas las facetas 
+                  del cristal brillando simultáneamente. Cada curva es una faceta diferente, 
+                  y juntas forman el <strong>Cristal de Antiderivadas</strong> completo.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
       {/* Notificación de logros */}
       {showNotification && currentNotification && (
         <div className="fixed top-4 right-4 z-50 bg-yellow-50 border border-yellow-300 rounded-lg p-4 shadow-lg animate-in slide-in-from-top">
