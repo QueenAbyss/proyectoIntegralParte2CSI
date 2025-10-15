@@ -70,30 +70,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         {/* Login Form */}
         <Card className="p-6 bg-white/90 backdrop-blur shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Role Selection */}
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold text-gray-700">Tipo de Usuario</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  onClick={() => setRole("student")}
-                  variant={role === "student" ? "default" : "outline"}
-                  className="flex items-center gap-2 h-12"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  Estudiante
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setRole("teacher")}
-                  variant={role === "teacher" ? "default" : "outline"}
-                  className="flex items-center gap-2 h-12"
-                >
-                  <Users className="w-4 h-4" />
-                  Profesor
-                </Button>
-              </div>
-            </div>
 
             {/* Email Input */}
             <div className="space-y-2">
@@ -160,30 +136,33 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           </form>
 
           {/* Demo Accounts */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6">
             <Label className="text-sm font-semibold text-gray-700 mb-3 block">
-              Cuentas de Demostración
+              Selecciona una Cuenta de Demostración
             </Label>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {demoAccounts.map((account, index) => (
                 <Button
                   key={index}
                   type="button"
                   variant="outline"
-                  className="w-full justify-start h-auto p-3"
+                  className="w-full justify-start h-auto p-4 hover:bg-gray-50"
                   onClick={() => fillDemoAccount(account)}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  <div className="flex items-center gap-4 w-full">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       account.role === "student" 
                         ? "bg-green-100 text-green-600" 
                         : "bg-blue-100 text-blue-600"
                     }`}>
-                      {account.role === "student" ? <BookOpen className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                      {account.role === "student" ? <BookOpen className="w-5 h-5" /> : <Users className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium text-sm">{account.name}</div>
-                      <div className="text-xs text-gray-500">{account.description}</div>
+                      <div className="font-semibold text-base">{account.name}</div>
+                      <div className="text-sm text-gray-600">{account.description}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {account.email} • {account.password}
+                      </div>
                     </div>
                     <Badge variant="secondary" className="text-xs">
                       {account.role === "student" ? "Estudiante" : "Profesor"}
