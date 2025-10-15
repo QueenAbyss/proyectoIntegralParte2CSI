@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, Star, Crown, Gem, Wand2 } from "lucide-react"
+import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, Star, Crown, Gem, Wand2, BookOpen, ChevronDown, ChevronUp } from "lucide-react"
 import { AchievementsSystem } from "../mean-value-theorem/achievements-system"
 import { TimerDisplay } from "../mean-value-theorem/timer-display"
 
@@ -40,6 +40,8 @@ export function VariableChangeVisualization({
   const [transformationChanges, setTransformationChanges] = useState(0)
   const [showNotification, setShowNotification] = useState(false)
   const [currentNotification, setCurrentNotification] = useState<any>(null)
+  const [showMathExplanation, setShowMathExplanation] = useState(false)
+  const [showAchievements, setShowAchievements] = useState(false)
 
   // Transformaciones mágicas
   const magicTransformations = {
@@ -48,7 +50,7 @@ export function VariableChangeVisualization({
       description: "Transformación lineal simple",
       fairyName: "🌺 Hada Lineal",
       color: "#FF6B6B",
-      transform: (x: number) => x + 1,
+      transform: (x: number, value: number = 1) => x + value,
       inverse: (u: number) => u - 1
     },
     quadratic: {
@@ -56,7 +58,7 @@ export function VariableChangeVisualization({
       description: "Transformación cuadrática",
       fairyName: "🌟 Hada Cuadrática",
       color: "#4ECDC4",
-      transform: (x: number) => x * x,
+      transform: (x: number, value: number = 1) => x * x * value,
       inverse: (u: number) => Math.sqrt(Math.abs(u)) * Math.sign(u)
     },
     exponential: {
@@ -64,7 +66,7 @@ export function VariableChangeVisualization({
       description: "Transformación exponencial",
       fairyName: "✨ Hada Exponencial",
       color: "#45B7D1",
-      transform: (x: number) => Math.exp(x),
+      transform: (x: number, value: number = 1) => Math.exp(x * value),
       inverse: (u: number) => Math.log(Math.abs(u)) * Math.sign(u)
     },
     trigonometric: {
@@ -72,7 +74,7 @@ export function VariableChangeVisualization({
       description: "Transformación trigonométrica",
       fairyName: "🌊 Hada Ondulante",
       color: "#96CEB4",
-      transform: (x: number) => Math.sin(x),
+      transform: (x: number, value: number = 1) => Math.sin(x * value),
       inverse: (u: number) => Math.asin(Math.max(-1, Math.min(1, u)))
     }
   }
@@ -284,7 +286,8 @@ export function VariableChangeVisualization({
       ctx.beginPath()
 
       for (let x = -3; x <= 3; x += 0.1) {
-        const transformedX = currentTransform.transform(x)
+        // Aplicar la transformación con el valor del slider
+        const transformedX = currentTransform.transform(x, transformationValue)
         const screenCoords = mathToScreen(transformedX, originalFunction(x))
         if (x === -3) {
           ctx.moveTo(screenCoords.x, screenCoords.y)
@@ -343,6 +346,70 @@ export function VariableChangeVisualization({
 
   return (
     <div className="space-y-6">
+      {/* Explicación Matemática - Desplegable */}
+      <Card className="p-4 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200">
+        <Button
+          onClick={() => setShowMathExplanation(!showMathExplanation)}
+          variant="outline"
+          className="w-full justify-between bg-green-50 border-green-200 hover:bg-green-100"
+        >
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-green-600" />
+            <span className="text-sm font-semibold text-green-800">📊 ¿Qué muestra la gráfica?</span>
+          </div>
+          {showMathExplanation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showMathExplanation && (
+          <div className="mt-4 space-y-4">
+            <p className="text-sm text-green-700 leading-relaxed">
+              La gráfica muestra el <strong>proceso de transformación</strong> del cambio de variable. 
+              Visualiza cómo una función se transforma mediante la sustitución u = g(x), 
+              mostrando la relación entre la función original y su transformada.
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="p-3 bg-white/80 rounded-lg border border-green-300">
+                <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2 text-xs">
+                  <Star className="w-4 h-4" />
+                  Elementos de la Gráfica
+                </h4>
+                <div className="text-green-700 text-xs space-y-1">
+                  <p><strong>Función Original:</strong> f(x) en el eje x</p>
+                  <p><strong>Transformación:</strong> u = g(x) aplicada</p>
+                  <p><strong>Función Transformada:</strong> f(u) en el eje u</p>
+                  <p><strong>Relación:</strong> Cómo cambia la forma</p>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-white/80 rounded-lg border border-green-300">
+                <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2 text-xs">
+                  <Crown className="w-4 h-4" />
+                  ¿Qué Observar?
+                </h4>
+                <div className="text-green-700 text-xs space-y-1">
+                  <p>• <strong>Antes:</strong> Forma de f(x)</p>
+                  <p>• <strong>Transformación:</strong> u = g(x)</p>
+                  <p>• <strong>Después:</strong> Forma de f(u)</p>
+                  <p>• <strong>Comparación:</strong> Diferencias visuales</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-gradient-to-r from-green-200 to-blue-200 rounded-lg border border-green-400">
+              <div className="text-center">
+                <div className="text-sm font-bold text-green-800 mb-1">✨ Visualización de la Transformación ✨</div>
+                <p className="text-green-700 text-xs">
+                  La gráfica te permite <strong>ver en tiempo real</strong> cómo el cambio de variable 
+                  transforma la función. Observa cómo la sustitución u = g(x) modifica la forma, 
+                  posición y características de la función original.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
       {/* Notificación de logros */}
       {showNotification && currentNotification && (
         <div className="fixed top-4 right-4 z-50 bg-yellow-50 border border-yellow-300 rounded-lg p-4 shadow-lg animate-in slide-in-from-top">
@@ -467,8 +534,26 @@ export function VariableChangeVisualization({
             </div>
           </Card>
 
-          {/* Sistema de Logros */}
-          <AchievementsSystem achievements={achievements} />
+          {/* Sistema de Logros - Desplegable */}
+          <Card className="p-3 bg-white/90 backdrop-blur">
+            <Button
+              onClick={() => setShowAchievements(!showAchievements)}
+              variant="outline"
+              className="w-full justify-between bg-yellow-50 border-yellow-200 hover:bg-yellow-100"
+            >
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-yellow-600" />
+                <span className="text-sm font-semibold text-yellow-800">🏆 Logros</span>
+              </div>
+              {showAchievements ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+            
+            {showAchievements && (
+              <div className="mt-3">
+                <AchievementsSystem achievements={achievements} />
+              </div>
+            )}
+          </Card>
 
           {/* Cronómetro */}
           <TimerDisplay

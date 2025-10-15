@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, Star, Crown, Gem, Wand2, Lightbulb, ChevronDown, ChevronUp } from "lucide-react"
+import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, Star, Crown, Gem, Wand2, Lightbulb, ChevronDown, ChevronUp, BookOpen } from "lucide-react"
 import { AchievementsSystem } from "../mean-value-theorem/achievements-system"
 import { TimerDisplay } from "../mean-value-theorem/timer-display"
 
@@ -44,6 +44,7 @@ export function IndefiniteIntegralsVisualization({
   const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now())
   const [currentTime, setCurrentTime] = useState<number>(0)
   const [showCrystalExplanation, setShowCrystalExplanation] = useState(false)
+  const [showMathExplanation, setShowMathExplanation] = useState(false)
 
   // Funciones matemáticas con temática de hadas
   // f(x) es la función original, F(x) es su antiderivada
@@ -210,24 +211,9 @@ export function IndefiniteIntegralsVisualization({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Fondo con gradiente de cristal mágico
-    const gradient = ctx.createLinearGradient(0, 0, width, height)
-    gradient.addColorStop(0, "#F8F4FF") // Púrpura muy claro
-    gradient.addColorStop(0.5, "#F0E6FF") // Púrpura claro
-    gradient.addColorStop(1, "#E8D8FF") // Púrpura medio claro
-    ctx.fillStyle = gradient
+    // Fondo blanco limpio
+    ctx.fillStyle = "#FFFFFF"
     ctx.fillRect(0, 0, width, height)
-    
-    // Efectos de cristal mágico en el fondo
-    ctx.fillStyle = "rgba(147, 51, 234, 0.03)"
-    for (let i = 0; i < 20; i++) {
-      const x = Math.random() * width
-      const y = Math.random() * height
-      const size = Math.random() * 3 + 1
-      ctx.beginPath()
-      ctx.arc(x, y, size, 0, Math.PI * 2)
-      ctx.fill()
-    }
 
     // Configuración del plano cartesiano
     const padding = 60
@@ -335,14 +321,8 @@ export function IndefiniteIntegralsVisualization({
       const colors = ["#FF6B6B", "#FF8C00", "#FFA500", "#32CD32", "#4169E1", "#9370DB", "#8A2BE2", "#FF1493", "#00CED1"]
       
       constants.forEach((C, index) => {
-        // Efecto de cristal para las curvas
-        const crystalGradient = ctx.createLinearGradient(0, 0, width, height)
-        crystalGradient.addColorStop(0, colors[index])
-        crystalGradient.addColorStop(0.5, colors[index] + "80") // Semi-transparente
-        crystalGradient.addColorStop(1, colors[index])
-        
-        ctx.strokeStyle = C === constantC ? "#FFD700" : crystalGradient
-        ctx.lineWidth = C === constantC ? 3 : 2
+        ctx.strokeStyle = colors[index]
+        ctx.lineWidth = 2
         ctx.setLineDash(C === constantC ? [] : [5, 5])
         ctx.beginPath()
 
@@ -361,68 +341,30 @@ export function IndefiniteIntegralsVisualization({
         }
         ctx.stroke()
         
-        // Efectos de brillo cristalino en puntos clave
+        // Resaltar la constante seleccionada
         if (C === constantC) {
-          ctx.fillStyle = "rgba(255, 215, 0, 0.6)"
-          for (let x = -4; x <= 4; x += 0.5) {
+          ctx.strokeStyle = "#FFD700"
+          ctx.lineWidth = 3
+          ctx.beginPath()
+          let firstPoint = true
+          for (let x = -4; x <= 4; x += 0.05) {
             const y = currentFunc.F(x, C)
-            const scaledY = Math.max(-4, Math.min(4, y / 4))
+            // Escalar la función para que quepa en el rango visible
+            const scaledY = Math.max(-4, Math.min(4, y / 4)) // Escalar por 4
             const screenCoords = mathToScreen(x, scaledY)
-            ctx.beginPath()
-            ctx.arc(screenCoords.x, screenCoords.y, 2, 0, Math.PI * 2)
-            ctx.fill()
+            if (firstPoint) {
+              ctx.moveTo(screenCoords.x, screenCoords.y)
+              firstPoint = false
+            } else {
+              ctx.lineTo(screenCoords.x, screenCoords.y)
+            }
           }
+          ctx.stroke()
         }
       })
       ctx.setLineDash([])
     }
 
-    // Efectos de cristal mágico en las esquinas
-    const drawCrystalCorners = () => {
-      const cornerSize = 30
-      const crystalColor = "rgba(147, 51, 234, 0.1)"
-      
-      // Esquina superior izquierda
-      ctx.fillStyle = crystalColor
-      ctx.beginPath()
-      ctx.moveTo(padding, padding)
-      ctx.lineTo(padding + cornerSize, padding)
-      ctx.lineTo(padding, padding + cornerSize)
-      ctx.closePath()
-      ctx.fill()
-      
-      // Esquina superior derecha
-      ctx.beginPath()
-      ctx.moveTo(width - padding, padding)
-      ctx.lineTo(width - padding - cornerSize, padding)
-      ctx.lineTo(width - padding, padding + cornerSize)
-      ctx.closePath()
-      ctx.fill()
-      
-      // Esquina inferior izquierda
-      ctx.beginPath()
-      ctx.moveTo(padding, height - padding)
-      ctx.lineTo(padding + cornerSize, height - padding)
-      ctx.lineTo(padding, height - padding - cornerSize)
-      ctx.closePath()
-      ctx.fill()
-      
-      // Esquina inferior derecha
-      ctx.beginPath()
-      ctx.moveTo(width - padding, height - padding)
-      ctx.lineTo(width - padding - cornerSize, height - padding)
-      ctx.lineTo(width - padding, height - padding - cornerSize)
-      ctx.closePath()
-      ctx.fill()
-    }
-    
-    drawCrystalCorners()
-
-    // Título mágico del cristal
-    ctx.fillStyle = "rgba(147, 51, 234, 0.8)"
-    ctx.font = "bold 16px Arial"
-    ctx.textAlign = "center"
-    ctx.fillText("💎 Cristal de Antiderivadas 💎", width / 2, padding - 10)
 
     // Etiquetas fijas en la gráfica
     if (showFamily) {
@@ -546,6 +488,67 @@ export function IndefiniteIntegralsVisualization({
                   Cuando visualizas las familias de antiderivadas, estás viendo todas las facetas 
                   del cristal brillando simultáneamente. Cada curva es una faceta diferente, 
                   y juntas forman el <strong>Cristal de Antiderivadas</strong> completo.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Explicación Matemática - Desplegable */}
+      <Card className="p-4 bg-gradient-to-br from-blue-50 to-green-50 border-2 border-blue-200">
+        <Button
+          onClick={() => setShowMathExplanation(!showMathExplanation)}
+          variant="outline"
+          className="w-full justify-between bg-blue-50 border-blue-200 hover:bg-blue-100"
+        >
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-semibold text-blue-800">📊 ¿Qué muestra la gráfica?</span>
+          </div>
+          {showMathExplanation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showMathExplanation && (
+          <div className="mt-4 space-y-4">
+            <p className="text-sm text-blue-700 leading-relaxed">
+              La gráfica muestra <strong>familias de antiderivadas</strong> de una función. 
+              Cada curva representa la misma función base, pero desplazada verticalmente por la constante C.
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="p-3 bg-white/80 rounded-lg border border-blue-300">
+                <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-xs">
+                  <Star className="w-4 h-4" />
+                  Lógica Matemática
+                </h4>
+                <div className="text-blue-700 text-xs space-y-1">
+                  <p><strong>Función Original:</strong> f(x) = x²</p>
+                  <p><strong>Antiderivada:</strong> F(x) = x³/3 + C</p>
+                  <p><strong>Familia:</strong> F(x) = x³/3 + C donde C ∈ ℝ</p>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-white/80 rounded-lg border border-blue-300">
+                <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-xs">
+                  <Crown className="w-4 h-4" />
+                  ¿Por qué múltiples curvas?
+                </h4>
+                <div className="text-blue-700 text-xs space-y-1">
+                  <p>• <strong>C = -4:</strong> F(x) = x³/3 - 4</p>
+                  <p>• <strong>C = 0:</strong> F(x) = x³/3</p>
+                  <p>• <strong>C = 4:</strong> F(x) = x³/3 + 4</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-gradient-to-r from-blue-200 to-green-200 rounded-lg border border-blue-400">
+              <div className="text-center">
+                <div className="text-sm font-bold text-blue-800 mb-1">✅ Verificación Matemática</div>
+                <p className="text-blue-700 text-xs">
+                  <strong>d/dx[x³/3 + C] = x²</strong> para cualquier valor de C. 
+                  Todas las curvas son antiderivadas válidas de f(x) = x². 
+                  La constante C representa las infinitas posibilidades de traslación vertical.
                 </p>
               </div>
             </div>
